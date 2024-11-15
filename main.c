@@ -1,9 +1,16 @@
 #include <stdio.h>
+#include <stdbool.h>
+
+
+
+typedef struct {
+    char name[50];      // Nom du joueur
+    char role[20];      // Rôle (ex : "Loup-Garou", "Villageois", "Voyante")
+    bool is_alive;      // Statut : vivant ou mort
+} Player;
+
+
 
 int main(void) {
-    printf("Hello, World!\n");//quzdzyqdfqzgudqftzrsdqtfyegtred
-    printf("Hello, World!\n"); //quzdzyqdfqzgudqftzrsdqtfyegtred
-    printf("nigeria");
-    return 0;
 }
 
