@@ -12,5 +12,9 @@ typedef struct {
 
 
 int main(void) {
+    int nb_joueur = 0;
+    printf("Nombre de joueurs : \n");
+    scanf("%d" , &nb_joueur);
+
 }
 
