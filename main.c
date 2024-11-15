@@ -2,7 +2,7 @@
 
 int main(void) {
     printf("Hello, World!\n");//quzdzyqdfqzgudqftzrsdqtfyegtred
-    printf("Hello, World!\n");//quzdzyqdfqzgudqftzrsdqtfyegtred
-    prinft("nigeria")
+    printf("Hello, World!\n"); //quzdzyqdfqzgudqftzrsdqtfyegtred
+    printf("nigeria");
     return 0;
 }
