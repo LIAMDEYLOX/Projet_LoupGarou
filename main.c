@@ -257,7 +257,7 @@ void check_lovers_death(Player players[], int nbPlayers) {
             if (players[loverIndex].alive == 1) {
                 printf("L'amoureux de %s, %s, meurt de chagrin.\n", players[i].name, players[loverIndex].name);
                 players[loverIndex].alive = 0;
-                // Si le chasseur est amoureux, il tire sur quelqu'un
+                // Si le chasseur est amoureux et qu'il meurt, il tire sur quelqu'un
                 if (players[loverIndex].role == CHASSEUR) {
                     hunter_revenge(players, nbPlayers, loverIndex);
                 }
