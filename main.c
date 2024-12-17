@@ -84,6 +84,8 @@ int main() {
     assign_roles(players, nbPlayers);
 
     cupidon_action(players, nbPlayers);
+
+    free(players);
 }
 
 int select_number_of_players() {
