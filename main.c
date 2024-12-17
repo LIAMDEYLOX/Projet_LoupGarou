@@ -3,6 +3,8 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <conio.h> // Windows uniquement pour _getch()
+
 
 typedef enum {
     VILLAGEOIS,
@@ -21,9 +23,28 @@ typedef struct {
     int lover; // stocke l'indice de l'amoureux (-1 si pas amoureux)
 } Player;
 
-// Prototypes
+// Prototypes:
+
+// Demande à l'utilisateur le nombre de joueurs et s'assure qu'il est valide (>= 6).
+// Retourne : Le nombre de joueurs sélectionnés.
 int select_number_of_players();
 
+
+//Attends que la touche espace soit appuyé
+//Utile pour distribuer les rôles sans voir les rôles de tous
+void wait_for_space();
+
+// Assigne les rôles aux joueurs de manière aléatoire (Villageois, Loups, etc.).
+// Paramètres :
+//   - players : Tableau contenant les joueurs.
+//   - nbPlayers : Nombre total de joueurs.
+void assign_roles(Player players[], int nbPlayers);
+
+// Retourne une chaîne de caractères représentant le nom d'un rôle.
+// Paramètres :
+//   - role : Rôle à convertir en chaîne.
+// Retourne : Une chaîne constante contenant le nom du rôle (ex : "Villageois", "Loup-Garou").
+const char* roleToString(Role role);
 
 //Main
 int main() {
@@ -58,6 +79,14 @@ int select_number_of_players() {
     return n;
 }
 
+
+void wait_for_space() {
+    printf("Appuie sur [Espace] pour continuer...\n");
+    while (_getch() != ' ') {
+        // Ne fait rien tant que la touche pressée n'est pas l'espace
+    }
+}
+
 void assign_roles(Player players[], int nbPlayers) {
 
     //Création d'une liste avec Role
@@ -87,7 +116,21 @@ void assign_roles(Player players[], int nbPlayers) {
 
     //Attribution des rôles aux joueurs
     for (int i = 0; i < nbPlayers; i++) {
+        wait_for_space(); // Attend un appui sur ESPACE
         players[i].role = roles[i];
-        printf("%s est %s\n", players[i].name, roleToString(players[i].role)); // Debugging
+        printf("%s est %s\n", players[i].name, roleToString(players[i].role)); //Affichage du rôle
+        wait_for_space(); // Attend un appui sur ESPACE
+    }
+}
+
+const char* roleToString(Role role) {
+    switch (role) {
+        case VILLAGEOIS: return "Villageois";
+        case SORCIERE: return "Sorcière";
+        case PETITE_FILLE: return "Petite Fille";
+        case CHASSEUR: return "Chasseur";
+        case LOUP: return "Loup-Garou";
+        case CUPIDON: return "Cupidon";
+        default: return "Inconnu";
     }
 }
