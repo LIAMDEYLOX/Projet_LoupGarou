@@ -10,10 +10,10 @@
 typedef enum {
     VILLAGEOIS,
     SORCIERE,
-    PETITE_FILLE,
+    VOYANTE,
     CHASSEUR,
     LOUP,
-    CUPIDON
+    CUPIDON,
 } Role;
 
 typedef struct {
@@ -102,7 +102,7 @@ void assign_roles(Player players[], int nbPlayers) {
     roles[index++] = SORCIERE;
     roles[index++] = CHASSEUR;
     roles[index++] = CUPIDON;
-    roles[index++] = PETITE_FILLE;
+    roles[index++] = VOYANTE;
 
     //Nombre de loups par rapport au nombre de joueur
     int nbLoups = nbPlayers / 3;
@@ -132,7 +132,7 @@ const char* roleToString(Role role) {
     switch (role) {
         case VILLAGEOIS: return "Villageois";
         case SORCIERE: return "Sorciere";
-        case PETITE_FILLE: return "Petite Fille";
+        case VOYANTE: return "VOYANTE";
         case CHASSEUR: return "Chasseur";
         case LOUP: return "Loup-Garou";
         case CUPIDON: return "Cupidon";
