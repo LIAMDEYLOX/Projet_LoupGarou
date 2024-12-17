@@ -361,7 +361,7 @@ void cupidon_action(Player players[], int nbPlayers) {
     display_alive_players(players, nbPlayers, CUPIDON);
     printf("Premier amoureux (index) : ");
     scanf("%d", &first);
-    printf("Deuxième amoureux (index) : ");
+    printf("Deuxieme amoureux (index) : ");
     scanf("%d", &second);
 
     //Actualise les états des joueurs
