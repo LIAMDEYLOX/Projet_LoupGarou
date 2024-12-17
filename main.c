@@ -17,7 +17,7 @@ typedef enum {
 typedef struct {
     char name[50];
     Role role;
-    int alive;
+    int alive; // 1 en vie, 0 mort
     int votes;
     int lover; // stocke l'indice de l'amoureux (-1 si pas amoureux)
 } Player;
