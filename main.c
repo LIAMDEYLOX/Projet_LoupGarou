@@ -2,10 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-#include <conio.h> // Windows uniquement pour _getch()
-#include <windows.h>
-#define SLEEP(x) Sleep((x) * 1000)// Windows : Sleep prend des millisecondes
+#include <unistd.h> // Pour sleep()
+#define SLEEP(x) sleep(x)
 
 typedef enum {
     VILLAGEOIS,
@@ -30,7 +28,7 @@ typedef struct {
 // Retourne : Le nombre de joueurs sélectionnés.
 int select_number_of_players();
 
-//Demande à l'utilisateur d'appuyer sur entrer afin de finir une étape
+//Demande à l'utilisateur d'appuyer sur entrée afin de finir une étape
 void wait_for_enter();
 
 // Assigne les rôles aux joueurs de manière aléatoire (Villageois, Loups, etc.).
@@ -167,9 +165,9 @@ int main() {
 
     printf("\n--- Fin de la partie ---\n");
     if (count_alive_role(players, nbPlayers, LOUP) == 0) {
-        printf("Les Villageois ont gagné !\n");
+        printf("Les Villageois ont gagne !\n");
     } else {
-        printf("Les Loups-Garous ont gagné !\n");
+        printf("Les Loups-Garous ont gagne !\n");
     }
 
     free(players);
@@ -182,7 +180,7 @@ int select_number_of_players() {
     do {
         printf("Combien de joueurs ? (minimum 6) : ");
         if (scanf("%d", &n) != 1 || n < 6) {
-            printf("Entrée invalide. Veuillez entrer un nombre >= 6.\n");
+            printf("Entree invalide. Veuillez entrer un nombre >= 6.\n");
             while (getchar() != '\n'); //Nettoyer le buffer
         }
     } while (n < 6);
@@ -192,10 +190,11 @@ int select_number_of_players() {
 
 
 void wait_for_enter() {
-    printf("Appuie sur [Entrer] pour continuer...\n");
-    while (_getch() != 13) {
-        // Ne fait rien tant que la touche pressée n'est pas entrer
-    }
+    printf("Appuyez sur Entree pour continuer...\n");
+    int c;
+    do {
+        c = getchar();
+    } while (c != '\n' && c != EOF);
 }
 
 void assign_roles(Player players[], int nbPlayers) {
@@ -250,7 +249,7 @@ void night_phase(Player players[], int nbPlayers, int *potionVie, int *potionMor
 
 
 void day_vote(Player players[], int nbPlayers) {
-    printf("\n--- Phase de Jour : Vote pour éliminer un joueur ---\n");
+    printf("\n--- Phase de Jour : Vote pour eliminer un joueur ---\n");
 
     // Réinitialiser les votes
     for (int i = 0; i < nbPlayers; i++) {
@@ -260,12 +259,18 @@ void day_vote(Player players[], int nbPlayers) {
     // Chaque joueur vivant vote
     for (int i = 0; i < nbPlayers; i++) {
         if (players[i].alive) {
-            printf("\n%s, choisissez un joueur à éliminer :\n", players[i].name);
+            printf("\n%s, choisissez un joueur a eliminer :\n", players[i].name);
             display_alive_players(players, nbPlayers, -1);
             int vote;
             do {
                 printf("Entrez l'index du joueur : ");
-                scanf("%d", &vote);
+                int res = scanf("%d", &vote);
+                while (getchar() != '\n');
+                if (res != 1) {
+                    printf("Entree invalide, reessayez.\n");
+                    // Retourner au début de la boucle qui demande un vote
+                    continue;
+                }
                 while (getchar() != '\n'); // Nettoie le buffer
                 if (vote < 0 || vote >= nbPlayers || !players[vote].alive || vote == i) {
                     printf("Choix invalide. Vous ne pouvez pas voter pour vous-même ou un joueur mort.\n");
@@ -286,7 +291,7 @@ void day_vote(Player players[], int nbPlayers) {
     }
 
     if (eliminatedIndex != -1) {
-        printf("\n%s a été éliminé par le village !\n", players[eliminatedIndex].name);
+        printf("\n%s a ete elimine par le village !\n", players[eliminatedIndex].name);
         players[eliminatedIndex].alive = 0;
 
         // Si le joueur éliminé est un Chasseur, il tire avant de mourir
@@ -294,7 +299,7 @@ void day_vote(Player players[], int nbPlayers) {
             hunter_revenge(players, nbPlayers, eliminatedIndex);
         }
     } else {
-        printf("\nPersonne n'a été éliminé aujourd'hui.\n");
+        printf("\nPersonne n'a ete elimine aujourd'hui.\n");
     }
 
     wait_for_enter();
@@ -344,8 +349,13 @@ void hunter_revenge(Player players[], int nbPlayers, int hunterIndex) {
     printf("Le chasseur %s est mort ! Il peut tuer une personne.\n", players[hunterIndex].name);
     display_alive_players(players, nbPlayers, CHASSEUR);
     int index;
-    scanf("%d", &index);
-    while (getchar() != '\n'); // Nettoyage buffer
+    int res = scanf("%d", &index);
+    while (getchar() != '\n');
+    if (res != 1) {
+        printf("Entree invalide, reessayez.\n");
+        continue;
+    }
+
     if (index >=0 && index < nbPlayers && players[index].alive && index != hunterIndex) {
         players[index].alive = 0;
         printf("%s est tué par le chasseur.\n", players[index].name);
@@ -358,18 +368,29 @@ void hunter_revenge(Player players[], int nbPlayers, int hunterIndex) {
 void cupidon_action(Player players[], int nbPlayers) {
     int first, second;
     printf("\n--- Cupidon choisit deux amoureux ---\n");
-    display_alive_players(players, nbPlayers, CUPIDON);
-    printf("Premier amoureux (index) : ");
-    scanf("%d", &first);
-    printf("Deuxieme amoureux (index) : ");
-    scanf("%d", &second);
+    for (int i = 0; i < nbPlayers; i++) {
+        if (players[i].alive) {
+            printf("%d. %s\n", i, players[i].name);
+        }
+    }
 
-    //Actualise les états des joueurs
+    printf("Premier amoureux (index) : ");
+    while (scanf("%d", &first) != 1 || first < 0 || first >= nbPlayers || !players[first].alive) {
+        printf("Index invalide. Réessayez : ");
+        while (getchar() != '\n'); // Nettoyer le buffer
+    }
+    while (getchar() != '\n'); // Nettoyer le buffer
+
+    printf("Deuxième amoureux (index) : ");
+    while (scanf("%d", &second) != 1 || second < 0 || second >= nbPlayers || !players[second].alive || second == first) {
+        printf("Index invalide. Réessayez : ");
+        while (getchar() != '\n'); // Nettoyer le buffer
+    }
+    while (getchar() != '\n'); // Nettoyer le buffer
+
     players[first].lover = second;
     players[second].lover = first;
     printf("%s et %s sont amoureux.\n", players[first].name, players[second].name);
-    while (getchar() != '\n'); // Nettoyage buffer
-    wait_for_enter();
 }
 
 void check_lovers_death(Player players[], int nbPlayers) {
@@ -406,24 +427,27 @@ void voyante_action(Player players[], int nbPlayers) {
         return;
     }
 
-    printf("Voyante (%s), choisis un joueur pour connaître son role :\n", players[voyanteIndex].name);
+    printf("Voyante (%s), choisis un joueur pour connaitre son role :\n", players[voyanteIndex].name);
     display_alive_players(players, nbPlayers, -1); // Affiche les joueurs vivants
 
     int choice;
     do {
         printf("Entrez l index du joueur : ");
-        scanf("%d", &choice);
-        while (getchar() != '\n'); // Nettoie le buffer
+        int res = scanf("%d", &choice);
+        while (getchar() != '\n');
+        if (res != 1) {
+            printf("Entree invalide, reessayez.\n");
+        }
     } while (choice < 0 || choice >= nbPlayers || !players[choice].alive);
 
     printf("Le role de %s est : %s\n", players[choice].name, roleToString(players[choice].role));
-    SLEEP(2);       // Pause pour éviter que tout le monde voie
+    wait_for_enter();
 }
 
 void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *potionVie, int *potionMort) {
     printf("\n--- Action de la Sorciere ---\n");
 
-    // Rechercher si la Sorcière est en vie
+    // Chercher la Sorcière en vie
     int sorciereIndex = -1;
     for (int i = 0; i < nbPlayers; i++) {
         if (players[i].role == SORCIERE && players[i].alive) {
@@ -432,22 +456,56 @@ void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *poti
         }
     }
 
+    // Si la sorcière est morte, fin de l'action
     if (sorciereIndex == -1) {
-        return; // La Sorcière est morte, elle ne peut pas agir.
+        return;
     }
 
-    // Potion de vie : sauver la victime des loups
+    // Potion de vie
     if (*potionVie && !players[victimIndex].alive) {
         printf("La victime des loups est %s. Voulez-vous la sauver ? (1 = Oui, 0 = Non) : ", players[victimIndex].name);
         int choice;
-        scanf("%d", &choice);
-        while (getchar() != '\n'); // Nettoie le buffer
-        if (choice == 1) {
+        int res = scanf("%d", &choice);
+        while (getchar() != '\n');
+        if (res != 1) {
+            printf("Entree invalide, la sorciere ne fait rien pour la potion de vie.\n");
+        } else if (choice == 1) {
             players[victimIndex].alive = 1;
-            *potionVie = 0; // Potion utilisée
+            *potionVie = 0; // potion utilisée
             printf("Vous avez sauve %s.\n", players[victimIndex].name);
         }
     }
+
+    // Potion de mort
+    if (*potionMort) {
+        printf("Voulez-vous utiliser la potion de mort pour tuer un joueur ? (1 = Oui, 0 = Non) : ");
+        int choice;
+        int res = scanf("%d", &choice);
+        while (getchar() != '\n');
+        if (res != 1) {
+            printf("Entree invalide, la sorciere ne fait rien pour la potion de mort.\n");
+        } else if (choice == 1) {
+            printf("Choisissez un joueur a tuer :\n");
+            display_alive_players(players, nbPlayers, sorciereIndex);
+
+            int target;
+            int res2 = scanf("%d", &target);
+            while (getchar() != '\n');
+            // Vérification du choix
+            if (res2 != 1 || target < 0 || target >= nbPlayers || !players[target].alive || target == sorciereIndex) {
+                printf("Choix invalide, la sorciere ne fait rien.\n");
+            } else {
+                players[target].alive = 0;
+                *potionMort = 0; // potion utilisée
+                printf("Vous avez tue %s avec la potion de mort.\n", players[target].name);
+            }
+        }
+    }
+
+    printf("La Sorciere a termine son action.\n");
+    wait_for_enter();
+}
+
 
     // Potion de mort : tuer un joueur
     if (*potionMort) {
@@ -460,7 +518,7 @@ void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *poti
             display_alive_players(players, nbPlayers, sorciereIndex);
             int target;
             do {
-                printf("Entrez l index du joueur : ");
+                printf("Entrez l'index du joueur : ");
                 scanf("%d", &target);
                 while (getchar() != '\n'); // Nettoie le buffer
             } while (target < 0 || target >= nbPlayers || !players[target].alive || target == sorciereIndex);
@@ -471,7 +529,7 @@ void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *poti
         }
     }
 
-    printf("La Sorciere a terminé son action.\n");
+    printf("La Sorciere a termine son action.\n");
     wait_for_enter();
 }
 
@@ -484,9 +542,13 @@ int loups_action(Player players[], int nbPlayers) {
 
     int target;
     do {
-        printf("Entrez l index de la cible : ");
-        scanf("%d", &target);
-        while (getchar() != '\n'); // Nettoie le buffer
+        printf("Entrez l'index de la cible : ");
+        int res = scanf("%d", &target);
+        while (getchar() != '\n');
+        if (res != 1) {
+            printf("Entree invalide, reessayez.\n");
+            continue; // retourner au début de la boucle de choix
+        }
         if (target < 0 || target >= nbPlayers || !players[target].alive || players[target].role == LOUP) {
             printf("Choix invalide. Vous ne pouvez pas attaquer un Loup-Garou ou un joueur mort.\n");
         }
