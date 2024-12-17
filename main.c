@@ -61,6 +61,20 @@ int count_alive_players(Player players[], int nbPlayers);
 // Retourne : Le nombre de joueurs vivants ayant le rôle spécifié.
 int count_alive_role(Player players[], int nbPlayers, Role r);
 
+// Gère la phase de nuit où les Loups attaquent, la Voyante découvre un rôle,
+// et la Sorcière peut utiliser ses potions.
+// Paramètres :
+//   - players : Tableau contenant les joueurs.
+//   - nbPlayers : Nombre total de joueurs.
+//   - potionVie : Pointeur vers la potion de vie de la Sorcière (utilisation unique).
+//   - potionMort : Pointeur vers la potion de mort de la Sorcière (utilisation unique).
+void night_phase(Player players[], int nbPlayers, int *potionVie, int *potionMort);
+
+// Gère la phase de vote pendant le jour pour éliminer un joueur.
+// Paramètres :
+//   - players : Tableau contenant les joueurs.
+//   - nbPlayers : Nombre total de joueurs.
+void day_vote(Player players[], int nbPlayers);
 
 // Vérifie si une condition de victoire est atteinte (Villageois ou Loups-Garous gagnants).
 // Paramètres :
@@ -92,7 +106,7 @@ void check_lovers_death(Player players[], int nbPlayers);
 // Paramètres :
 //   - players : Tableau contenant les joueurs.
 //   - nbPlayers : Nombre total de joueurs.
-void voyante_action(Player players[], int nbPlayers)
+void voyante_action(Player players[], int nbPlayers);
 
 // Permet à la Sorcière d'utiliser ses potions pendant la nuit : sauver ou tuer un joueur.
 // Paramètres :
@@ -101,14 +115,14 @@ void voyante_action(Player players[], int nbPlayers)
 //   - victimIndex : Indice de la victime des loups.
 //   - potionVie : Pointeur vers la potion de vie (1 si disponible, 0 sinon).
 //   - potionMort : Pointeur vers la potion de mort (1 si disponible, 0 sinon).
-void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *potionVie, int *potionMort)
+void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *potionVie, int *potionMort);
 
 // Permet aux Loups-Garous de choisir une victime pendant la nuit.
 // Paramètres :
 //   - players : Tableau contenant les joueurs.
 //   - nbPlayers : Nombre total de joueurs.
 // Retourne : L'indice du joueur choisi comme victime.
-int loups_action(Player players[], int nbPlayers)
+int loups_action(Player players[], int nbPlayers);
 
 // Retourne une chaîne de caractères représentant le nom d'un rôle.
 // Paramètres :
@@ -135,14 +149,33 @@ int main() {
         players[i].lover = -1;
     }
 
-    printf("\n--- Distribution des rôles en cours ---\n");
+    printf("\n--- Distribution des roles en cours ---\n");
     SLEEP(1);
     assign_roles(players, nbPlayers);
 
     cupidon_action(players, nbPlayers);
 
+    // Début de la boucle de jeu
+    while (!check_win_condition(players, nbPlayers)) {
+        night_phase(players, nbPlayers, &potionVie, &potionMort);
+        check_lovers_death(players, nbPlayers);
+        if (check_win_condition(players, nbPlayers)) break;
+
+        day_vote(players, nbPlayers);
+        check_lovers_death(players, nbPlayers);
+    }
+
+    printf("\n--- Fin de la partie ---\n");
+    if (count_alive_role(players, nbPlayers, LOUP) == 0) {
+        printf("Les Villageois ont gagné !\n");
+    } else {
+        printf("Les Loups-Garous ont gagné !\n");
+    }
+
     free(players);
+    return 0;
 }
+
 
 int select_number_of_players() {
     int n;
@@ -216,6 +249,56 @@ void night_phase(Player players[], int nbPlayers, int *potionVie, int *potionMor
 }
 
 
+void day_vote(Player players[], int nbPlayers) {
+    printf("\n--- Phase de Jour : Vote pour éliminer un joueur ---\n");
+
+    // Réinitialiser les votes
+    for (int i = 0; i < nbPlayers; i++) {
+        players[i].votes = 0;
+    }
+
+    // Chaque joueur vivant vote
+    for (int i = 0; i < nbPlayers; i++) {
+        if (players[i].alive) {
+            printf("\n%s, choisissez un joueur à éliminer :\n", players[i].name);
+            display_alive_players(players, nbPlayers, -1);
+            int vote;
+            do {
+                printf("Entrez l'index du joueur : ");
+                scanf("%d", &vote);
+                while (getchar() != '\n'); // Nettoie le buffer
+                if (vote < 0 || vote >= nbPlayers || !players[vote].alive || vote == i) {
+                    printf("Choix invalide. Vous ne pouvez pas voter pour vous-même ou un joueur mort.\n");
+                }
+            } while (vote < 0 || vote >= nbPlayers || !players[vote].alive || vote == i);
+            players[vote].votes++;
+        }
+    }
+
+    // Trouver le joueur avec le plus de votes
+    int maxVotes = 0;
+    int eliminatedIndex = -1;
+    for (int i = 0; i < nbPlayers; i++) {
+        if (players[i].alive && players[i].votes > maxVotes) {
+            maxVotes = players[i].votes;
+            eliminatedIndex = i;
+        }
+    }
+
+    if (eliminatedIndex != -1) {
+        printf("\n%s a été éliminé par le village !\n", players[eliminatedIndex].name);
+        players[eliminatedIndex].alive = 0;
+
+        // Si le joueur éliminé est un Chasseur, il tire avant de mourir
+        if (players[eliminatedIndex].role == CHASSEUR) {
+            hunter_revenge(players, nbPlayers, eliminatedIndex);
+        }
+    } else {
+        printf("\nPersonne n'a été éliminé aujourd'hui.\n");
+    }
+
+    wait_for_enter();
+}
 
 int check_win_condition(Player players[], int nbPlayers) {
     int nbLoups = count_alive_role(players, nbPlayers, LOUP);
