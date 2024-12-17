@@ -41,6 +41,19 @@ void wait_for_enter();
 //   - nbPlayers : Nombre total de joueurs.
 void assign_roles(Player players[], int nbPlayers);
 
+// Affiche la liste des joueurs encore en vie.
+// Paramètres :
+//   - players : Tableau contenant les joueurs.
+//   - nbPlayers : Nombre total de joueurs.
+//   - excludeRole : Exclut un rôle spécifique de l'affichage (par exemple, les Loups).
+void display_alive_players(Player players[], int nbPlayers, Role excludeRole);
+
+// Gère l'action de Cupidon qui désigne deux amoureux en début de partie.
+// Paramètres :
+//   - players : Tableau contenant les joueurs.
+//   - nbPlayers : Nombre total de joueurs.
+void cupidon_action(Player players[], int nbPlayers);
+
 // Retourne une chaîne de caractères représentant le nom d'un rôle.
 // Paramètres :
 //   - role : Rôle à convertir en chaîne.
@@ -69,6 +82,8 @@ int main() {
     printf("\n--- Distribution des rôles en cours ---\n");
     SLEEP(1);
     assign_roles(players, nbPlayers);
+
+    cupidon_action(players, nbPlayers);
 }
 
 int select_number_of_players() {
@@ -126,6 +141,31 @@ void assign_roles(Player players[], int nbPlayers) {
         printf("%s est %s\n", players[i].name, roleToString(players[i].role)); //Affichage du rôle
         wait_for_enter();
     }
+}
+
+void display_alive_players(Player players[], int nbPlayers, Role excludeRole) {
+    for (int i = 0; i < nbPlayers; i++) {
+        if (players[i].alive && (excludeRole == -1 || players[i].role != excludeRole)) {
+            printf("%d. %s\n", i, players[i].name);
+        }
+    }
+}
+
+void cupidon_action(Player players[], int nbPlayers) {
+    int first, second;
+    printf("\n--- Cupidon choisit deux amoureux ---\n");
+    display_alive_players(players, nbPlayers, CUPIDON);
+
+    printf("Premier amoureux (index) : ");
+    scanf("%d", &first);
+    printf("Deuxième amoureux (index) : ");
+    scanf("%d", &second);
+
+    //Actualise les états des joueurs
+    players[first].lover = second;
+    players[second].lover = first;
+    printf("%s et %s sont amoureux.\n", players[first].name, players[second].name);
+    while (getchar() != '\n'); // Nettoyage buffer
 }
 
 const char* roleToString(Role role) {
