@@ -31,9 +31,9 @@ typedef struct {
 int select_number_of_players();
 
 
-//Attends que la touche espace soit appuyé
+//Attends que la touche entrer soit appuyé
 //Utile pour distribuer les rôles sans voir les rôles de tous
-void wait_for_space();
+void wait_for_enter();
 
 // Assigne les rôles aux joueurs de manière aléatoire (Villageois, Loups, etc.).
 // Paramètres :
@@ -85,10 +85,10 @@ int select_number_of_players() {
 }
 
 
-void wait_for_space() {
-    printf("Appuie sur [Espace] pour continuer...\n");
-    while (_getch() != ' ') {
-        // Ne fait rien tant que la touche pressée n'est pas l'espace
+void wait_for_enter() {
+    printf("Appuie sur [Entrer] pour continuer...\n");
+    while (_getch() != 13) {
+        // Ne fait rien tant que la touche pressée n'est pas entrer
     }
 }
 
@@ -120,18 +120,18 @@ void assign_roles(Player players[], int nbPlayers) {
     }
 
     //Attribution des rôles aux joueurs
+    wait_for_enter(); // Attend un appui sur enter
     for (int i = 0; i < nbPlayers; i++) {
-        wait_for_space(); // Attend un appui sur ESPACE
         players[i].role = roles[i];
         printf("%s est %s\n", players[i].name, roleToString(players[i].role)); //Affichage du rôle
-        wait_for_space(); // Attend un appui sur ESPACE
+        wait_for_enter();
     }
 }
 
 const char* roleToString(Role role) {
     switch (role) {
         case VILLAGEOIS: return "Villageois";
-        case SORCIERE: return "Sorcière";
+        case SORCIERE: return "Sorciere";
         case PETITE_FILLE: return "Petite Fille";
         case CHASSEUR: return "Chasseur";
         case LOUP: return "Loup-Garou";
