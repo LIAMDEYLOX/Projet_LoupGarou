@@ -1,3 +1,0 @@
-C:/Users/marjo/CLionProjects/Loupgarou/cmake-build-debug/CMakeFiles/Loupgarou.dir
-C:/Users/marjo/CLionProjects/Loupgarou/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/marjo/CLionProjects/Loupgarou/cmake-build-debug/CMakeFiles/rebuild_cache.dir

@@ -56,3 +56,4 @@ int select_number_of_players() {
     while (getchar() != '\n');
     return n;
 }
+
