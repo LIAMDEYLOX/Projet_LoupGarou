@@ -4,7 +4,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <conio.h> // Windows uniquement pour _getch()
-
+#include <windows.h>
+#define SLEEP(x) Sleep((x) * 1000)// Windows : Sleep prend des millisecondes
 
 typedef enum {
     VILLAGEOIS,
@@ -64,6 +65,10 @@ int main() {
         players[i].votes = 0;
         players[i].lover = -1;
     }
+
+    printf("\n--- Distribution des rôles en cours ---\n");
+    SLEEP(1);
+    assign_roles(players, nbPlayers);
 }
 
 int select_number_of_players() {
