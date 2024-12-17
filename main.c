@@ -44,16 +44,50 @@ int main() {
         players[i].lover = -1;
     }
 }
+
 int select_number_of_players() {
     int n;
     do {
         printf("Combien de joueurs ? (minimum 6) : ");
         if (scanf("%d", &n) != 1 || n < 6) {
             printf("Entrée invalide. Veuillez entrer un nombre >= 6.\n");
-            while (getchar() != '\n');
+            while (getchar() != '\n'); //Nettoyer le buffer
         }
     } while (n < 6);
-    while (getchar() != '\n');
+    while (getchar() != '\n'); //Nettoyer le buffer
     return n;
 }
 
+void assign_roles(Player players[], int nbPlayers) {
+
+    //Création d'une liste avec Role
+    Role roles[nbPlayers];
+    int index = 0;
+
+    //Ajout des rôles spéciaux uniques à la liste
+    roles[index++] = SORCIERE;
+    roles[index++] = CHASSEUR;
+    roles[index++] = CUPIDON;
+    roles[index++] = PETITE_FILLE;
+
+    //Nombre de loups par rapport au nombre de joueur
+    int nbLoups = nbPlayers / 3;
+    for (int i = 0; i < nbLoups; i++) roles[index++] = LOUP;
+
+    //Compléter les villageois restants
+    while (index < nbPlayers) roles[index++] = VILLAGEOIS;
+
+    // Mélange des rôles
+    for (int i = 0; i < nbPlayers; i++) {
+        int r = rand() % nbPlayers;
+        Role temp = roles[i];
+        roles[i] = roles[r];
+        roles[r] = temp;
+    }
+
+    //Attribution des rôles aux joueurs
+    for (int i = 0; i < nbPlayers; i++) {
+        players[i].role = roles[i];
+        printf("%s est %s\n", players[i].name, roleToString(players[i].role)); // Debugging
+    }
+}
