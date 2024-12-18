@@ -347,21 +347,22 @@ int count_alive_role(Player players[], int nbPlayers, Role r) {
 
 void hunter_revenge(Player players[], int nbPlayers, int hunterIndex) {
     printf("Le chasseur %s est mort ! Il peut tuer une personne.\n", players[hunterIndex].name);
-    display_alive_players(players, nbPlayers, CHASSEUR);
-    int index;
-    int res = scanf("%d", &index);
-    while (getchar() != '\n');
-    if (res != 1) {
-        printf("Entree invalide, reessayez.\n");
-        continue;
+    display_alive_players(players, nbPlayers, -1);
+
+    int index, validInput = 0;
+    while (!validInput) {
+        printf("Entrez l'indice du joueur a tuer : ");
+        int res = scanf("%d", &index);
+        while (getchar() != '\n');
+        if (res == 1 && index >= 0 && index < nbPlayers && players[index].alive && index != hunterIndex) {
+            validInput = 1;
+        } else {
+            printf("Choix invalide, reessayez.\n");
+        }
     }
 
-    if (index >=0 && index < nbPlayers && players[index].alive && index != hunterIndex) {
-        players[index].alive = 0;
-        printf("%s est tué par le chasseur.\n", players[index].name);
-    } else {
-        printf("Choix invalide, le chasseur part sans tuer.\n");
-    }
+    players[index].alive = 0;
+    printf("%s est tue par le chasseur.\n", players[index].name);
     wait_for_enter();
 }
 
@@ -446,8 +447,6 @@ void voyante_action(Player players[], int nbPlayers) {
 
 void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *potionVie, int *potionMort) {
     printf("\n--- Action de la Sorciere ---\n");
-
-    // Chercher la Sorcière en vie
     int sorciereIndex = -1;
     for (int i = 0; i < nbPlayers; i++) {
         if (players[i].role == SORCIERE && players[i].alive) {
@@ -456,8 +455,8 @@ void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *poti
         }
     }
 
-    // Si la sorcière est morte, fin de l'action
     if (sorciereIndex == -1) {
+        // Sorcière morte
         return;
     }
 
@@ -471,7 +470,7 @@ void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *poti
             printf("Entree invalide, la sorciere ne fait rien pour la potion de vie.\n");
         } else if (choice == 1) {
             players[victimIndex].alive = 1;
-            *potionVie = 0; // potion utilisée
+            *potionVie = 0;
             printf("Vous avez sauve %s.\n", players[victimIndex].name);
         }
     }
@@ -489,42 +488,20 @@ void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *poti
             display_alive_players(players, nbPlayers, sorciereIndex);
 
             int target;
-            int res2 = scanf("%d", &target);
-            while (getchar() != '\n');
-            // Vérification du choix
-            if (res2 != 1 || target < 0 || target >= nbPlayers || !players[target].alive || target == sorciereIndex) {
-                printf("Choix invalide, la sorciere ne fait rien.\n");
-            } else {
-                players[target].alive = 0;
-                *potionMort = 0; // potion utilisée
-                printf("Vous avez tue %s avec la potion de mort.\n", players[target].name);
-            }
-        }
-    }
-
-    printf("La Sorciere a termine son action.\n");
-    wait_for_enter();
-}
-
-
-    // Potion de mort : tuer un joueur
-    if (*potionMort) {
-        printf("Voulez-vous utiliser la potion de mort pour tuer un joueur ? (1 = Oui, 0 = Non) : ");
-        int choice;
-        scanf("%d", &choice);
-        while (getchar() != '\n'); // Nettoie le buffer
-        if (choice == 1) {
-            printf("Choisissez un joueur a tuer :\n");
-            display_alive_players(players, nbPlayers, sorciereIndex);
-            int target;
-            do {
+            int valid = 0;
+            while (!valid) {
                 printf("Entrez l'index du joueur : ");
-                scanf("%d", &target);
-                while (getchar() != '\n'); // Nettoie le buffer
-            } while (target < 0 || target >= nbPlayers || !players[target].alive || target == sorciereIndex);
+                int res2 = scanf("%d", &target);
+                while (getchar() != '\n');
+                if (res2 == 1 && target >= 0 && target < nbPlayers && players[target].alive && target != sorciereIndex) {
+                    valid = 1;
+                } else {
+                    printf("Choix invalide, reessayez.\n");
+                }
+            }
 
             players[target].alive = 0;
-            *potionMort = 0; // Potion utilisée
+            *potionMort = 0;
             printf("Vous avez tue %s avec la potion de mort.\n", players[target].name);
         }
     }
