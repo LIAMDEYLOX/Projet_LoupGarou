@@ -12,6 +12,7 @@ typedef enum {
     CHASSEUR,
     LOUP,
     CUPIDON,
+    LOUP_BLANC,
 } Role;
 
 typedef struct {
@@ -126,6 +127,13 @@ int loups_action(Player players[], int nbPlayers);
 // Paramètres :
 //   - role : Rôle à convertir en chaîne.
 // Retourne : Une chaîne constante contenant le nom du rôle (ex : "Villageois", "Loup-Garou").
+
+int loup_blanc_action(Player players[], int nbPlayers, static int nuit);
+// Retourne une chaîne de caractères représentant le nom d'un rôle.
+// Paramètres :
+//   - role : Rôle à convertir en chaîne.
+// Retourne : Une chaîne constante contenant le nom du rôle (ex : "Villageois", "Loup-Blanc").
+
 const char* roleToString(Role role);
 
 //Main
@@ -163,11 +171,18 @@ int main() {
         check_lovers_death(players, nbPlayers);
     }
 
+    int nbLoups = count_alive_role(players, nbPlayers, LOUP);
+    int nbLoupBlanc = count_alive_role(players, nbPlayers, LOUP_BLANC);
+    int nbVivs = count_alive_players(players, nbPlayers);
+    int nbVillage = nbVivs - nbLoups + nbLoupBlanc;
+
     printf("\n--- Fin de la partie ---\n");
-    if (count_alive_role(players, nbPlayers, LOUP) == 0) {
+    if (nbLoups == 0 && nbLoupBlanc ==0 && nbVillage >= 1) {
         printf("Les Villageois ont gagne !\n");
-    } else {
+    } else if (nbVillage == 0 && nbLoupBlanc ==0 && nbLoups >= 1) {
         printf("Les Loups-Garous ont gagne !\n");
+    } else if (nbVillage == 0 && nbLoups == 0 && nbLoupBlanc >= 1) {
+        printf("Les Loups-Blanc ont gagne !\n");
     }
 
     free(players);
@@ -213,6 +228,10 @@ void assign_roles(Player players[], int nbPlayers) {
     int nbLoups = nbPlayers / 3;
     for (int i = 0; i < nbLoups; i++) roles[index++] = LOUP;
 
+    if (nbLoups > 2) { // Condition pour ajouter le Loup Blanc
+        roles[index++] = LOUP_BLANC;
+    }
+
     //Compléter les villageois restants
     while (index < nbPlayers) roles[index++] = VILLAGEOIS;
 
@@ -234,6 +253,8 @@ void assign_roles(Player players[], int nbPlayers) {
 }
 
 void night_phase(Player players[], int nbPlayers, int *potionVie, int *potionMort) {
+    static int nuit = 0; // Compteur pour suivre les nuits
+    nuit++;
     printf("\n--- Phase de Nuit ---\n");
 
     // 1. Action de la Voyante
@@ -245,6 +266,9 @@ void night_phase(Player players[], int nbPlayers, int *potionVie, int *potionMor
 
     // 3. Action de la Sorcière
     sorciere_action(players, nbPlayers, victimIndex, potionVie, potionMort);
+
+    // 4. Action du Loup Blanc
+    loup_blanc_action(players, nbPlayers, nuit);
 }
 
 
@@ -307,14 +331,19 @@ void day_vote(Player players[], int nbPlayers) {
 
 int check_win_condition(Player players[], int nbPlayers) {
     int nbLoups = count_alive_role(players, nbPlayers, LOUP);
+    int nbLoupBlanc = count_alive_role(players, nbPlayers, LOUP_BLANC);
     int nbVivs = count_alive_players(players, nbPlayers);
     int nbVillage = nbVivs - nbLoups;
 
-    if (nbLoups == 0) {
+    // Si seul le Loup Blanc est vivant
+    if (nbLoupBlanc >= 1 && nbLoupBlanc > nbLoups && nbLoupBlanc > nbVillage) {
+        return 1;
+    }
+    if (nbLoups == 0 && nbLoupBlanc == 0) {
         // Les villageois gagnent
         return 1;
     }
-    if (nbLoups >= nbVillage) {
+    if (nbLoups >= nbVillage && nbLoups >= nbLoupBlanc) {
         // Les loups gagnent
         return 1;
     }
@@ -536,6 +565,42 @@ int loups_action(Player players[], int nbPlayers) {
     return target; // Retourne l'indice de la victime
 }
 
+int loup_blanc_action(Player players[], int nbPlayers, int nuit) {
+    if (nuit % 2 == 0) { // Le Loup Blanc agit seulement une nuit sur deux
+        printf("\n--- Action du Loup Blanc ---\n");
+
+        // Rechercher le Loup Blanc
+        int loupBlancIndex = -1;
+        for (int i = 0; i < nbPlayers; i++) {
+            if (players[i].role == LOUP_BLANC && players[i].alive) {
+                loupBlancIndex = i;
+                break;
+            }
+        }
+
+        // Si le Loup Blanc est en vie, il choisit une victime parmi les loups
+        if (loupBlancIndex != -1) {
+            printf("%s (Loup Blanc), choisis un Loup-Garou a eliminer :\n", players[loupBlancIndex].name);
+            for (int i = 0; i < nbPlayers; i++) {
+                if (players[i].alive && players[i].role == LOUP && i != loupBlancIndex) {
+                    printf("%d. %s\n", i, players[i].name);
+                }
+            }
+
+            int choice;
+            do {
+                printf("Entrez l'index du Loup-Garou a tuer : ");
+                scanf("%d", &choice);
+                while (getchar() != '\n'); // Nettoyage buffer
+            } while (choice < 0 || choice >= nbPlayers || players[choice].role != LOUP || !players[choice].alive);
+
+            players[choice].alive = 0;
+            printf("%s a été tué par le Loup Blanc.\n", players[choice].name);
+            wait_for_enter();
+        }
+    }
+}
+
 
 const char* roleToString(Role role) {
     switch (role) {
@@ -545,6 +610,7 @@ const char* roleToString(Role role) {
         case CHASSEUR: return "Chasseur";
         case LOUP: return "Loup-Garou";
         case CUPIDON: return "Cupidon";
+        case LOUP_BLANC: return "Loup-Blanc";
         default: return "Inconnu";
     }
 }
