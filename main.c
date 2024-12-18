@@ -174,7 +174,11 @@ int main() {
     int nbLoups = count_alive_role(players, nbPlayers, LOUP);
     int nbLoupBlanc = count_alive_role(players, nbPlayers, LOUP_BLANC);
     int nbVivs = count_alive_players(players, nbPlayers);
-    int nbVillage = nbVivs - nbLoups + nbLoupBlanc;
+    int nbVillage = int nbVillage = count_alive_role(players, nbPlayers, VILLAGEOIS) +
+                count_alive_role(players, nbPlayers, SORCIERE) +
+                count_alive_role(players, nbPlayers, VOYANTE) +
+                count_alive_role(players, nbPlayers, CHASSEUR) +
+                count_alive_role(players, nbPlayers, CUPIDON);
 
     printf("\n--- Fin de la partie ---\n");
     if (nbLoups == 0 && nbLoupBlanc ==0 && nbVillage >= 1) {
