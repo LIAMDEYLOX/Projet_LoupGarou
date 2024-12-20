@@ -125,16 +125,13 @@ void sorciere_action(Player players[], int nbPlayers, int victimIndex, int *poti
 // Retourne : L'indice du joueur choisi comme victime.
 int loups_action(Player players[], int nbPlayers);
 
-// Retourne une chaîne de caractères représentant le nom d'un rôle.
-// Paramètres :
-//   - role : Rôle à convertir en chaîne.
-// Retourne : Une chaîne constante contenant le nom du rôle (ex : "Villageois", "Loup-Garou").
 
-int loup_blanc_action(Player players[], int nbPlayers, int nuit);
 // Retourne une chaîne de caractères représentant le nom d'un rôle.
 // Paramètres :
 //   - role : Rôle à convertir en chaîne.
 // Retourne : Une chaîne constante contenant le nom du rôle (ex : "Villageois", "Loup-Blanc").
+int loup_blanc_action(Player players[], int nbPlayers, int nuit);
+
 
 // Permet au Salvateur de choisir une personne à protéger
 // Paramètres :
@@ -143,7 +140,12 @@ int loup_blanc_action(Player players[], int nbPlayers, int nuit);
 // Retourne : L'indice du joueur choisi.
 int Salvateur_action(Player players[], int nbPlayers);
 
+// Retourne une chaîne de caractères représentant le nom d'un rôle.
+// Paramètres :
+//   - role : Rôle à convertir en chaîne.
+// Retourne : Une chaîne constante contenant le nom du rôle (ex : "Villageois", "Loup-Garou").
 char* roleToString(Role role);
+
 
 //Main
 int main() {
