@@ -309,21 +309,24 @@ void day_vote(Player players[], int nbPlayers) {
         if (players[i].alive) {
             printf("\n%s, choisissez un joueur a eliminer :\n", players[i].name);
             display_alive_players(players, nbPlayers, -1);
-            int vote;
+
+            int vote, res;
             do {
                 printf("Entrez l'index du joueur : ");
-                int res = scanf("%d", &vote);
-                while (getchar() != '\n');
+                res = scanf("%d", &vote);
+                while (getchar() != '\n'); // Nettoyage du buffer après chaque saisie
+
                 if (res != 1) {
                     printf("Entree invalide, reessayez.\n");
-                    // Retourner au début de la boucle qui demande un vote
                     continue;
                 }
-                while (getchar() != '\n'); // Nettoie le buffer
+
                 if (vote < 0 || vote >= nbPlayers || !players[vote].alive || vote == i) {
-                    printf("Choix invalide. Vous ne pouvez pas voter pour vous-même ou un joueur mort.\n");
+                    printf("Choix invalide. Vous ne pouvez pas voter pour vous-meme ou un joueur mort.\n");
                 }
-            } while (vote < 0 || vote >= nbPlayers || !players[vote].alive || vote == i);
+
+            } while (res != 1 || vote < 0 || vote >= nbPlayers || !players[vote].alive || vote == i);
+
             players[vote].votes++;
         }
     }
@@ -340,7 +343,7 @@ void day_vote(Player players[], int nbPlayers) {
 
     if (eliminatedIndex != -1) {
         printf("\n%s a ete elimine par le village !\n", players[eliminatedIndex].name);
-        printf("\n son role était %s !\n", players[eliminatedIndex].role);
+        printf("Son role etait : %s\n", roleToString(players[eliminatedIndex].role));
         players[eliminatedIndex].alive = 0;
 
         // Si le joueur éliminé est un Chasseur, il tire avant de mourir
@@ -353,16 +356,16 @@ void day_vote(Player players[], int nbPlayers) {
 
     wait_for_enter();
 
-    // Actualise le statut de la personne protégé
-    for(int i = 0; i < nbPlayers; i++) {
+    // Actualise le statut de la personne protégée
+    for (int i = 0; i < nbPlayers; i++) {
         if (players[i].is_protected == 1 && players[i].alive) {
-            players[i].is_protected = 2; // L'état 2 permet d'identifier au tour suivant si le joueur vient de recevoir la salvation.
-
-        } else if (players[i].is_protected == 2 || players[i].alive) {
+            players[i].is_protected = 2;
+        } else if (players[i].is_protected == 2 && players[i].alive) {
             players[i].is_protected = 0;
         }
     }
 }
+
 
 int check_win_condition(Player players[], int nbPlayers) {
     int nbLoups = count_alive_role(players, nbPlayers, LOUP);
@@ -441,14 +444,14 @@ void cupidon_action(Player players[], int nbPlayers) {
 
     printf("Premier amoureux (index) : ");
     while (scanf("%d", &first) != 1 || first < 0 || first >= nbPlayers || !players[first].alive) {
-        printf("Index invalide. Réessayez : ");
+        printf("Index invalide. Reessayez : ");
         while (getchar() != '\n'); // Nettoyer le buffer
     }
     while (getchar() != '\n'); // Nettoyer le buffer
 
-    printf("Deuxième amoureux (index) : ");
+    printf("Deuxieme amoureux (index) : ");
     while (scanf("%d", &second) != 1 || second < 0 || second >= nbPlayers || !players[second].alive || second == first) {
-        printf("Index invalide. Réessayez : ");
+        printf("Index invalide. Reessayez : ");
         while (getchar() != '\n'); // Nettoyer le buffer
     }
     while (getchar() != '\n'); // Nettoyer le buffer
@@ -639,12 +642,12 @@ int loup_blanc_action(Player players[], int nbPlayers, int nuit) {
 int Salvateur_action(Player players[], int nbPlayers) {
     printf("\n--- Action du Salvateur ----\n");
 
-    printf("Le Salvateur choisit un joueur qu'il souhaite protéger:\n");
+    printf("Le Salvateur choisit un joueur qu'il souhaite proteger:\n");
     display_alive_players(players, nbPlayers, SALVATEUR);
 
     int target;
     do {
-        printf("Entrez l'index de la personne à protéger : ");
+        printf("Entrez l'index de la personne a proteger : ");
         int protect = scanf("%d", &target);
 
         if (protect != 1) {
@@ -652,12 +655,12 @@ int Salvateur_action(Player players[], int nbPlayers) {
             continue;
         }
         if (target < 0 || target >= nbPlayers || !players[target].alive || players[target].is_protected == 2) {
-            printf("Choix invalide. Vous ne pouvez pas protéger un joueur mort ou deux fois la même personne.\n");
+            printf("Choix invalide. Vous ne pouvez pas proteger un joueur mort ou deux fois la même personne.\n");
         }
     } while (target < 0 || target >= nbPlayers || !players[target].alive || players[target].is_protected == 2);
 
-    printf("Le salvateur à chosit %s. \n", players[target].name);
-    wait_for_enter;
+    printf("Le salvateur a chosit %s. \n", players[target].name);
+    wait_for_enter();
     return target; // Retourne l'indice de la personne protéger
 }
 
