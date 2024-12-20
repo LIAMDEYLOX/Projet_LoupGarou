@@ -12,6 +12,8 @@ typedef enum {
     CHASSEUR,
     LOUP,
     CUPIDON,
+    LOUP_BLANC,
+    SALVATEUR,
 } Role;
 
 typedef struct {
@@ -20,6 +22,7 @@ typedef struct {
     int alive; // 1 en vie, 0 mort
     int votes;
     int lover; // stocke l'indice de l'amoureux (-1 si pas amoureux)
+    int is_protected; // 0 pour pas protégé, 1 est protégé, 2 était protégé au tour d'avant
 } Player;
 
 // Prototypes:
@@ -126,7 +129,21 @@ int loups_action(Player players[], int nbPlayers);
 // Paramètres :
 //   - role : Rôle à convertir en chaîne.
 // Retourne : Une chaîne constante contenant le nom du rôle (ex : "Villageois", "Loup-Garou").
-const char* roleToString(Role role);
+
+int loup_blanc_action(Player players[], int nbPlayers, int nuit);
+// Retourne une chaîne de caractères représentant le nom d'un rôle.
+// Paramètres :
+//   - role : Rôle à convertir en chaîne.
+// Retourne : Une chaîne constante contenant le nom du rôle (ex : "Villageois", "Loup-Blanc").
+
+// Permet au Salvateur de choisir une personne à protéger
+// Paramètres :
+//   - players : Tableau contenant les joueurs.
+//   - nbPlayers : Nombre total de joueurs.
+// Retourne : L'indice du joueur choisi.
+int Salvateur_action(Player players[], int nbPlayers);
+
+char* roleToString(Role role);
 
 //Main
 int main() {
@@ -145,6 +162,7 @@ int main() {
         players[i].alive = 1;
         players[i].votes = 0;
         players[i].lover = -1;
+        players[i].is_protected = 0;
     }
 
     printf("\n--- Distribution des roles en cours ---\n");
@@ -163,11 +181,22 @@ int main() {
         check_lovers_death(players, nbPlayers);
     }
 
+    int nbLoups = count_alive_role(players, nbPlayers, LOUP);
+    int nbLoupBlanc = count_alive_role(players, nbPlayers, LOUP_BLANC);
+    int nbVivs = count_alive_players(players, nbPlayers);
+    int nbVillage = count_alive_role(players, nbPlayers, VILLAGEOIS) +
+                count_alive_role(players, nbPlayers, SORCIERE) +
+                count_alive_role(players, nbPlayers, VOYANTE) +
+                count_alive_role(players, nbPlayers, CHASSEUR) +
+                count_alive_role(players, nbPlayers, CUPIDON);
+
     printf("\n--- Fin de la partie ---\n");
-    if (count_alive_role(players, nbPlayers, LOUP) == 0) {
+    if (nbLoups == 0 && nbLoupBlanc ==0 && nbVillage >= 1) {
         printf("Les Villageois ont gagne !\n");
-    } else {
+    } else if (nbVillage == 0 && nbLoupBlanc ==0 && nbLoups >= 1) {
         printf("Les Loups-Garous ont gagne !\n");
+    } else if (nbVillage == 0 && nbLoups == 0 && nbLoupBlanc >= 1) {
+        printf("Les Loups-Blanc ont gagne !\n");
     }
 
     free(players);
@@ -213,6 +242,14 @@ void assign_roles(Player players[], int nbPlayers) {
     int nbLoups = nbPlayers / 3;
     for (int i = 0; i < nbLoups; i++) roles[index++] = LOUP;
 
+    if (nbLoups > 2) { // Condition pour ajouter le Loup Blanc
+        roles[index++] = LOUP_BLANC;
+    }
+
+    // Ajout du Salvateur à la composition à partir de 8 joueur
+    if (nbPlayers >= 8) {
+        roles[index++] = SALVATEUR;
+    }
     //Compléter les villageois restants
     while (index < nbPlayers) roles[index++] = VILLAGEOIS;
 
@@ -234,17 +271,26 @@ void assign_roles(Player players[], int nbPlayers) {
 }
 
 void night_phase(Player players[], int nbPlayers, int *potionVie, int *potionMort) {
+    static int nuit = 0; // Compteur pour suivre les nuits
+    nuit++;
     printf("\n--- Phase de Nuit ---\n");
 
     // 1. Action de la Voyante
     voyante_action(players, nbPlayers);
 
-    // 2. Action des Loups-Garous
+    // 2. Action du Salvateur
+    int protectIndex = Salvateur_action(players, nbPlayers);
+    players[protectIndex].is_protected = 1;
+
+    // 3. Action des Loups-Garous
     int victimIndex = loups_action(players, nbPlayers);
     players[victimIndex].alive = 0;
 
-    // 3. Action de la Sorcière
+    // 4. Action de la Sorcière
     sorciere_action(players, nbPlayers, victimIndex, potionVie, potionMort);
+
+    // 5. Action du Loup Blanc
+    loup_blanc_action(players, nbPlayers, nuit);
 }
 
 
@@ -292,6 +338,7 @@ void day_vote(Player players[], int nbPlayers) {
 
     if (eliminatedIndex != -1) {
         printf("\n%s a ete elimine par le village !\n", players[eliminatedIndex].name);
+        printf("\n son role était %s !\n", players[eliminatedIndex].role);
         players[eliminatedIndex].alive = 0;
 
         // Si le joueur éliminé est un Chasseur, il tire avant de mourir
@@ -303,18 +350,33 @@ void day_vote(Player players[], int nbPlayers) {
     }
 
     wait_for_enter();
+
+    // Actualise le statut de la personne protégé
+    for(int i = 0; i < nbPlayers; i++) {
+        if (players[i].is_protected == 1 && players[i].alive) {
+            players[i].is_protected = 2; // L'état 2 permet d'identifier au tour suivant si le joueur vient de recevoir la salvation.
+
+        } else if (players[i].is_protected == 2 || players[i].alive) {
+            players[i].is_protected = 0;
+        }
+    }
 }
 
 int check_win_condition(Player players[], int nbPlayers) {
     int nbLoups = count_alive_role(players, nbPlayers, LOUP);
+    int nbLoupBlanc = count_alive_role(players, nbPlayers, LOUP_BLANC);
     int nbVivs = count_alive_players(players, nbPlayers);
     int nbVillage = nbVivs - nbLoups;
 
-    if (nbLoups == 0) {
+    // Si seul le Loup Blanc est vivant
+    if (nbLoupBlanc >= 1 && nbLoupBlanc > nbLoups && nbLoupBlanc > nbVillage) {
+        return 1;
+    }
+    if (nbLoups == 0 && nbLoupBlanc == 0) {
         // Les villageois gagnent
         return 1;
     }
-    if (nbLoups >= nbVillage) {
+    if (nbLoups >= nbVillage && nbLoups >= nbLoupBlanc) {
         // Les loups gagnent
         return 1;
     }
@@ -536,8 +598,69 @@ int loups_action(Player players[], int nbPlayers) {
     return target; // Retourne l'indice de la victime
 }
 
+int loup_blanc_action(Player players[], int nbPlayers, int nuit) {
+    if (nuit % 2 == 0) { // Le Loup Blanc agit seulement une nuit sur deux
+        printf("\n--- Action du Loup Blanc ---\n");
 
-const char* roleToString(Role role) {
+        // Rechercher le Loup Blanc
+        int loupBlancIndex = -1;
+        for (int i = 0; i < nbPlayers; i++) {
+            if (players[i].role == LOUP_BLANC && players[i].alive) {
+                loupBlancIndex = i;
+                break;
+            }
+        }
+
+        // Si le Loup Blanc est en vie, il choisit une victime parmi les loups
+        if (loupBlancIndex != -1) {
+            printf("%s (Loup Blanc), choisis un Loup-Garou a eliminer :\n", players[loupBlancIndex].name);
+            for (int i = 0; i < nbPlayers; i++) {
+                if (players[i].alive && players[i].role == LOUP && i != loupBlancIndex) {
+                    printf("%d. %s\n", i, players[i].name);
+                }
+            }
+
+            int choice = 0 ;
+            do {
+                printf("Entrez l'index du Loup-Garou a tuer : ");
+                scanf("%d", &choice);
+                while (getchar() != '\n'); // Nettoyage buffer
+            } while (choice < 0 || choice >= nbPlayers || players[choice].role != LOUP || !players[choice].alive);
+
+            players[choice].alive = 0;
+            printf("%s a été tué par le Loup Blanc.\n", players[choice].name);
+            wait_for_enter();
+        }
+    }
+}
+
+int Salvateur_action(Player players[], int nbPlayers) {
+    printf("\n--- Action du Salvateur ----\n");
+
+    printf("Le Salvateur choisit un joueur qu'il souhaite protéger:\n");
+    display_alive_players(players, nbPlayers, SALVATEUR);
+
+    int target;
+    do {
+        printf("Entrez l'index de la personne à protéger : ");
+        int protect = scanf("%d", &target);
+
+        if (protect != 1) {
+            printf("Entree invalide, reessayez.\n");
+            continue;
+        }
+        if (target < 0 || target >= nbPlayers || !players[target].alive || players[target].is_protected == 2) {
+            printf("Choix invalide. Vous ne pouvez pas protéger un joueur mort ou deux fois la même personne.\n");
+        }
+    } while (target < 0 || target >= nbPlayers || !players[target].alive || players[target].is_protected == 2);
+
+    printf("Le salvateur à chosit %s. \n", players[target].name);
+    wait_for_enter;
+    return target; // Retourne l'indice de la personne protéger
+}
+
+
+char *roleToString(Role role) {
     switch (role) {
         case VILLAGEOIS: return "Villageois";
         case SORCIERE: return "Sorciere";
@@ -545,6 +668,8 @@ const char* roleToString(Role role) {
         case CHASSEUR: return "Chasseur";
         case LOUP: return "Loup-Garou";
         case CUPIDON: return "Cupidon";
+        case LOUP_BLANC: return "Loup-Blanc";
+        case SALVATEUR: return "Salvateur";
         default: return "Inconnu";
     }
 }
